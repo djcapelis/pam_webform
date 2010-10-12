@@ -39,7 +39,6 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * apph, int flags, int argc, con
     char * passprompt = "Password:";
     int ret;
     int pwentcharsmax = sysconf(_SC_GETPW_R_SIZE_MAX);
-    struct pam_conv * conv;
     int i;
 
     for(i=0; i<argc;++i)
@@ -57,13 +56,41 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t * apph, int flags, int argc, con
     pwentchars = calloc(1, pwentcharsmax);
     chk_err(pwentchars == NULL);
 
-    ret = pam_get_item(apph, PAM_USER, (void*) &uname);
+    ret = pam_get_user(apph, (const char **) &uname, NULL);
     chk_err(ret != PAM_SUCCESS);
 
     ret = getpwnam_r(uname, &pwent, pwentchars, pwentcharsmax, &user);
     chk_err(ret != NULL);
 
-    printf("User: %s Homedir: %s ID: %d\n", user->pw_name, user->pw_dir, user->pw_uid);
+    //printf("User: %s Homedir: %s ID: %d\n", user->pw_name, user->pw_dir, user->pw_uid);
+
+    struct pam_conv * pam_conv;
+    struct pam_response * pam_resp;
+    struct pam_message * pam_msg;
+    struct pam_response presp;
+    struct pam_message pmsg;
+
+    pam_resp = &presp;
+    pam_msg = &pmsg;
+    pmsg.msg_style = PAM_PROMPT_ECHO_OFF;
+    pmsg.msg = "password: ";
+
+    ret = pam_get_item(apph, PAM_CONV, (void *) &pam_conv);
+    chk_err(ret != PAM_SUCCESS);
+
+    pam_conv->conv(1, (const struct pam_message **) &pam_msg, &pam_resp, pam_conv->appdata_ptr);
+    //printf("Password: %s\n", pam_resp->resp);
+
+
+
+
+
+
+
+
+
+
+
 
     free(pwentchars);
 
